@@ -6,4 +6,9 @@ __pycache__/
 
 # Claude config
 .claude/
+CLAUDE.md
+
+# Runtime data
+data/
+reports/
 
