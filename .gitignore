@@ -1,0 +1,9 @@
+# Sensitive config
+.env
+
+# Python cache
+__pycache__/
+
+# Claude config
+.claude/
+

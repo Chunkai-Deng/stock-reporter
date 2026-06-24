@@ -1,0 +1,56 @@
+{
+  "date": "2026-06-23",
+  "pre_screened_count": 1767,
+  "picks": [
+    {
+      "code": "300319",
+      "name": "麦捷科技",
+      "price": 31.76,
+      "score": 7.5,
+      "strategies": [
+        "💪主力资金#1"
+      ],
+      "industry": "电子-元件-被动元件"
+    },
+    {
+      "code": "300522",
+      "name": "世名科技",
+      "price": 22.82,
+      "score": 6.5,
+      "strategies": [
+        "💪主力资金#2"
+      ],
+      "industry": "基础化工-化学制品-涂料"
+    },
+    {
+      "code": "301072",
+      "name": "中捷精工",
+      "price": 39.81,
+      "score": 5.5,
+      "strategies": [
+        "💪主力资金#3"
+      ],
+      "industry": "汽车-汽车零部件-底盘与"
+    },
+    {
+      "code": "300489",
+      "name": "光智科技",
+      "price": 238.15,
+      "score": 5.0,
+      "strategies": [
+        "💪主力资金#4"
+      ],
+      "industry": "电子-光学光电子-光学元"
+    },
+    {
+      "code": "300401",
+      "name": "花园生物",
+      "price": 20.92,
+      "score": 5.0,
+      "strategies": [
+        "💪主力资金#5"
+      ],
+      "industry": "医药生物-化学制药-原料"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+# Stock Reporter shared library

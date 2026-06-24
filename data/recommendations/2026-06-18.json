@@ -1,0 +1,56 @@
+{
+  "date": "2026-06-18",
+  "pre_screened_count": 1510,
+  "picks": [
+    {
+      "code": "000608",
+      "name": "阳光股份",
+      "price": 7.59,
+      "score": 7.5,
+      "strategies": [
+        "💪主力资金#1"
+      ],
+      "industry": "房地产-房地产-商业地产"
+    },
+    {
+      "code": "603011",
+      "name": "合锻智能",
+      "price": 39.55,
+      "score": 6.5,
+      "strategies": [
+        "💪主力资金#2"
+      ],
+      "industry": "机械设备-专用设备-其他"
+    },
+    {
+      "code": "300319",
+      "name": "麦捷科技",
+      "price": 25.65,
+      "score": 5.5,
+      "strategies": [
+        "💪主力资金#3"
+      ],
+      "industry": "电子-元件-被动元件"
+    },
+    {
+      "code": "301072",
+      "name": "中捷精工",
+      "price": 39.17,
+      "score": 5.0,
+      "strategies": [
+        "💪主力资金#4"
+      ],
+      "industry": "汽车-汽车零部件-底盘与"
+    },
+    {
+      "code": "300489",
+      "name": "光智科技",
+      "price": 227.0,
+      "score": 5.0,
+      "strategies": [
+        "💪主力资金#5"
+      ],
+      "industry": "电子-光学光电子-光学元"
+    }
+  ]
+}

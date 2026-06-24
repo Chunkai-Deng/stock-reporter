@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>股票监控报告</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Microsoft YaHei", sans-serif;
+  background: #f5f6fa; color: #2d3436; padding: 12px;
+  max-width: 600px; margin: 0 auto;
+}
+.card {
+  background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.header { text-align: center; padding: 12px 0; }
+.header-title { font-size: 18px; font-weight: 800; color: #2d3436; }
+.header-time { font-size: 12px; color: #b2bec3; margin-top: 2px; }
+.header-stats { font-size: 13px; color: #636e72; margin-top: 6px; }
+.stock-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; margin-bottom: 8px;
+}
+.stock-summary { text-align: right; }
+.stock-name { font-size: 16px; font-weight: 700; }
+.stock-code { font-size: 12px; color: #636e72; margin-left: 4px; }
+.price { font-size: 20px; font-weight: 800; }
+.price.up { color: #e74c3c; }
+.price.down { color: #27ae60; }
+.change { font-size: 13px; font-weight: 600; margin: 0 6px; }
+.change.up { color: #e74c3c; }
+.change.down { color: #27ae60; }
+.score-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 12px;
+  font-size: 12px; font-weight: 700; color: #fff; vertical-align: middle;
+}
+.score-badge.high { background: #e74c3c; }
+.score-badge.mid { background: #fdcb6e; color: #2d3436; }
+.score-badge.low { background: #27ae60; }
+.section-title {
+  font-size: 13px; font-weight: 700; color: #636e72;
+  padding: 6px 0; border-bottom: 2px solid #dfe6e9; margin-bottom: 6px;
+}
+.metrics { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.metric { display: flex; justify-content: space-between; font-size: 12px; }
+.metric .label { color: #636e72; }
+.metric .value { font-weight: 600; color: #2d3436; }
+.signal-box {
+  padding: 10px; border-radius: 8px; margin: 6px 0; font-size: 13px;
+  font-weight: 700; text-align: center;
+}
+.signal-box.bullish { background: #fff3f3; color: #e74c3c; }
+.signal-box.bearish { background: #f0fff4; color: #27ae60; }
+.signal-box.neutral { background: #f8f9fa; color: #636e72; }
+.ai-section {
+  background: #fafbff; border-left: 3px solid #6c5ce7; padding: 10px 12px;
+  border-radius: 4px; font-size: 13px; line-height: 1.7;
+}
+.agent-tag {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  font-size: 11px; font-weight: 600; margin-right: 4px;
+}
+.agent-tag.tech { background: #ffeaa7; color: #d63031; }
+.agent-tag.fund { background: #dfe6e9; color: #2d3436; }
+.agent-tag.flow { background: #a29bfe; color: #fff; }
+.decision-box {
+  border: 2px solid #6c5ce7; border-radius: 10px; padding: 12px;
+  margin: 10px 0; background: #fafbff;
+}
+.decision-title { font-size: 14px; font-weight: 700; color: #6c5ce7; margin-bottom: 6px; }
+.decision-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font-size: 12px; }
+.decision-metrics .item { display: flex; justify-content: space-between; }
+.detail-text { font-size: 13px; line-height: 1.7; color: #2d3436; padding: 4px 0; }
+.footer {
+  text-align: center; font-size: 11px; color: #b2bec3; padding: 12px 0 8px;
+}
+.divider { height: 2px; background: #6c5ce7; margin: 8px 0 12px; border-radius: 1px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">📊 股票监控报告</div>
+  <div class="header-time">2026-06-23 14:39 | 5 只股票 | 2涨3跌</div>
+  <div class="divider"></div>
+</div>
+
+<div class="card">
+  <div class="stock-card-header">
+    <div>
+      <span class="stock-name">杉杉股份</span>
+      <span class="stock-code">600884</span>
+    </div>
+    <div class="stock-summary">
+      <span class="price up">¥14.52</span>
+      <span class="change up">+0.48%</span>
+      <span class="score-badge high">3/10</span>
+    </div>
+  </div>
+
+  <div class="signal-box bullish">📈 偏多，逢低可加仓</div>
+
+  <div class="section-title">📈 技术速览</div>
+  <div class="metrics">
+    <div class="metric"><span class="label">MA5 / MA10 / MA20</span><span class="value">14.22 / 13.80 / 14.00</span></div>
+    <div class="metric"><span class="label">MACD 信号</span><span class="value">金叉 柱=0.14</span></div>
+    <div class="metric"><span class="label">RSI / KDJ-J</span><span class="value">55.6 / 103.0</span></div>
+    <div class="metric"><span class="label">布林带宽 / 量比</span><span class="value">17.6% / 1.06 (正常)</span></div>
+    <div class="metric"><span class="label">支撑 / 压力</span><span class="value">12.84 / 18.07</span></div>
+    <div class="metric"><span class="label">ADX / +DI / -DI</span><span class="value">13.0 / 21.2 / 19.7</span></div>
+    <div class="metric"><span class="label">周线 / 背离</span><span class="value">上涨 / 无</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">🤖 杉杉股份 AI 视角</div>
+  <div class="ai-section">杉杉股份当前呈震荡偏多格局。股价站上MA5/10/20，均线多头排列初现。MACD金叉红柱，动能温和。但KDJ的J值达103，已进入超买区，短线或有技术性回调需求。布林带中轨走平，股价正向上轨靠近，带宽17.6%显示波动尚可。ADX仅13，趋势强度不足，+DI与-DI纠缠，印证震荡特征。
+
+**操作建议**：可依托MA10（13.80）逢低吸纳，但不宜追高。上方压力关注布林上轨15.23及前高18.07，下方支撑看14.00中轨。若放量突破15.23可加仓，若跌破13.80则需止损。
+
+**风险提示**：J值超买可能引发短线回调；周线虽涨但日线ADX过低，趋势持续性存疑。
+
+以上为AI分析，仅供参考，不构成投资建议。</div>
+</div>
+<div class="card"><div class="section-title">🧠 多智能体分析</div>
+<div style="margin:6px 0;"><span class="agent-tag tech">技术面</span></div>
+<div class="detail-text">杉杉股份现价14.52元，短期均线（MA5/10）多头排列，价格站上所有均线，趋势偏多。但需注意，KDJ的J值高达103，进入严重超买区，短期或有技术回调需求。MACD金叉红柱初现，多头动能启动，但ADX仅13，表明趋势强度尚弱。价格运行于布林带中轨与上轨之间，上方直接压力在15.23元（上轨），强支撑在14.00元（中轨）附近。量比1.06，量能温和。综上，短期看反弹但超买需消化，中线若守住中轨则有望转强。风险提示：J值高位钝化可能引发快速回踩，关注14元支撑有效性。</div>
+<div style="margin:6px 0;"><span class="agent-tag fund">基本面</span></div>
+<div class="detail-text">杉杉股份（600884）呈现**低基数上的边际修复，但绝对盈利能力依然薄弱**。
+
+1.  **盈利能力**：ROE从2024年亏损恢复至2025年一季度的1.5%，净利率极薄（约2-6%），盈利质地不佳。
+2.  **财务健康**：资产负债率约50%，但经营现金流波动剧烈（2025Q1为负），显示造血能力不稳定。
+3.  **成长性**：营收同比无明显增长，当前利润改善主要源于低基数，非需求爆发。
+4.  **季报趋势**：利润端环比改善，但营收规模环比下滑，需警惕“增收不增利”反转为“减收增利”的不可持续性。
+5.  **估值与研判**：TTM市盈率约186倍，已严重透支未来预期。鉴于盈利</div>
+<div style="margin:6px 0;"><span class="agent-tag flow">资金面</span></div>
+<div class="detail-text">报告期主力累计大幅净流出，趋势明确偏空。近10日仅2日小幅流入，其余均为流出，尤其1月22日单日流出超2亿，为典型派发信号。期间虽有1月21日、26日放量拉升，但在持续流出背景下，更似拉高诱多出货。股价重心下移（14.52现已接近区间低位），量价呈现“主力流出、股价下跌”的弱势负向配合。散户资金被诱多承接。当前信号为明确的卖出与观望。操作上，资金面已破位，建议规避，勿盲目抄底。</div>
+<div style="margin:8px 0;font-size:13px;line-height:1.7;"><strong>团队讨论:</strong> 会议结论：**建议卖出或规避，无买入基础。**
+
+**1. 分歧与一致性**
+- **分歧点**：技术面看“短期反弹”，理由为均线多头排列；而资金面呈“主力派发”，基本面判为“估值透支”。
+- **一致性**：三者均隐含风险。技术面有**J值超买**，基本面**盈利薄弱**，资金面**主力出逃**。反弹是假象，风险是共识。
+
+**2. 权重考量**
+- **给予资金面最高权重**。在基本面缺乏安全边际时，主力持续流出直接决定方向。技术面的短期看多信号在资金面证伪下，极大概率演变为“诱多陷阱”。
+
+**3. 核心逻辑**
+- 当前是**低质资产遭遇主力派发**。186倍市盈率靠边际修复无法消化，资金流出的“负向反馈”已形成。14元的技术支撑大概率无效。
+
+**结论：切莫抄底，持有者应趁技术反弹减仓。**</div>
+<div class="decision-box">
+<div class="decision-title">📋 最终决策</div>
+<div class="decision-metrics">
+<div class="item"><span>评级</span><span><strong>卖出</strong></span></div>
+<div class="item"><span>目标价</span><span>15.10</span></div>
+<div class="item"><span>止损位</span><span>13.50</span></div>
+<div class="item"><span>止盈</span><span>15.10</span></div>
+<div class="item"><span>仓位</span><span>空仓</span></div>
+<div class="item"><span>信心度</span><span>8/10</span></div>
+</div>
+<div style="font-size:12px;color:#636e72;margin-top:6px;">风险: 主力持续流出，基本面估值高企，技术面超买反弹易成诱多陷阱，14元支撑失效概率大，切勿抄底</div>
+</div>
+</div>
+<div class="card">
+  <div class="stock-card-header">
+    <div>
+      <span class="stock-name">博杰股份</span>
+      <span class="stock-code">002975</span>
+    </div>
+    <div class="stock-summary">
+      <span class="price down">¥143.52</span>
+      <span class="change down">-4.63%</span>
+      <span class="score-badge high">3/10</span>
+    </div>
+  </div>
+
+  <div class="signal-box bullish">📈 偏多，逢低可加仓</div>
+
+  <div class="section-title">📈 技术速览</div>
+  <div class="metrics">
+    <div class="metric"><span class="label">MA5 / MA10 / MA20</span><span class="value">142.05 / 133.53 / 134.48</span></div>
+    <div class="metric"><span class="label">MACD 信号</span><span class="value">-- 柱=-0.12</span></div>
+    <div class="metric"><span class="label">RSI / KDJ-J</span><span class="value">47.3 / 99.7</span></div>
+    <div class="metric"><span class="label">布林带宽 / 量比</span><span class="value">30.4% / 0.98 (正常)</span></div>
+    <div class="metric"><span class="label">支撑 / 压力</span><span class="value">52.91 / 157.97</span></div>
+    <div class="metric"><span class="label">ADX / +DI / -DI</span><span class="value">35.0 / 24.4 / 16.6</span></div>
+    <div class="metric"><span class="label">周线 / 背离</span><span class="value">上涨 / 无</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">🤖 博杰股份 AI 视角</div>
+  <div class="ai-section">**博杰股份（002975）技术分析速评：**
+
+**1. 趋势判断：** 短期多头趋势中的高位震荡。现价站上所有短期均线（MA5/10/20），且周线趋势向上，但今日回调4.63%，显示上攻乏力。
+
+**2. 关键信号：**
+- **MACD**：DIF与DEA即将死叉，红柱消失转绿，动能衰减。
+- **KDJ**：J值高达99.7，严重超买，K线已有拐头迹象，回调压力大。
+- **布林带**：股价从上轨附近回落，正向中轨（134.48）寻求支撑。
+- **ADX**：35.0，趋势强度尚可，但+DI向下，多方力量减弱。
+
+**3. 操作建议：** 短线规避，不宜追高。超买信号叠加死叉风险，大概率回踩MA10（133.53）或布林中轨。持仓者可考虑逢高减仓，空仓者等待回调企稳信号。
+
+**4. 风险提示：** 当前价距下方均线支撑仍有空间，若快速下跌可能触发获利盘涌出；注意J值高位钝化后的急跌风险。
+
+以上为AI分析，仅供参考，不构成投资建议。</div>
+</div>
+<div class="card"><div class="section-title">🧠 多智能体分析</div>
+<div style="margin:6px 0;"><span class="agent-tag tech">技术面</span></div>
+<div class="detail-text">博杰股份（002975）当前价格143.52，中期趋势向好（价格位于多头排列的MA5/10/20之上），但短期面临调整压力。
+
+**风险信号显著：**
+1.  **超买回调**：KDJ的J值高达99.69，严重超买且K线下穿，回调需求强烈。
+2.  **动能衰减**：MACD刚形成死叉，红柱消失绿柱初现，空头动能开始释放。
+3.  **量价背离**：下跌时量比仅0.98，缩量下跌显示承接意愿不足。
+
+**关键位研判**：上方压力157.97，下方第一支撑看MA5（142.05）与布林带中轨（134.48）。若142关口失守，调整将向纵深发展。**短期以逢高减仓为主，慎防技术性修复风险。**</div>
+<div style="margin:6px 0;"><span class="agent-tag fund">基本面</span></div>
+<div class="detail-text">**博杰股份(002975) 基本面分析简报**
+
+**1. 盈利能力：极不稳定，盈利质量差。**
+近8个季度，销售净利率在-15.5%至13.8%间剧烈波动，最新一期ROE仅2.8%，全年看盈利能力微弱。亏损与微利交替，显示主营业务缺乏稳定壁垒。
+
+**2. 财务健康度：经营失血是核心风险。**
+资产负债率约27%，结构尚可。但经营现金流连续4期为负，近三期合计净流出超4.2亿元，表明利润仅为账面数字，自我造血能力严重不足。
+
+**3. 成长性：无增长，大幅收缩。**
+以年度看，收入从18.36亿骤降至12.33亿。最新季度收入同比下降超100%，不仅是衰退，更似业务链出现根本性问题。
+
+*</div>
+<div style="margin:6px 0;"><span class="agent-tag flow">资金面</span></div>
+<div class="detail-text">基于成交量数据（量比0.98，正常水平），当前无明确主力资金流向数据，整体呈现均衡态势。  
+股价143.52处于相对高位，但成交量无异常放大或萎缩，显示多空暂时平衡。  
+缺乏主力流入/流出佐证，难以判断吸筹或出货，盘中未见明显拉升或抛压。  
+散户交易活跃度中性，博弈焦点不突出。  
+量价配合平稳，未出现背离信号。  
+关键信号：当前为观望状态，待成交量放大或资金流向明确后再行决策。  
+操作建议：暂时观望，未出现主力进场迹象前不宜追高，若后续放量下跌需警惕。</div>
+<div style="margin:8px 0;font-size:13px;line-height:1.7;"><strong>团队讨论:</strong> 各位，结论很清晰。**三份报告罕见地高度一致，核心指向——坚决规避。**
+
+**一致性与分歧：**
+- **完全一致**：基本面“失血”与技术面“超买衰竭”形成共振，都是强烈的卖出信号。这是最危险的组合。
+- **唯一的“分歧”是表象**：资金面看似中性的“观望”，实际是主力在技术恶化、估值虚幻时不愿进场接盘，这本身就是最强的空方佐证。缺乏买盘，下跌只是时间问题。
+
+**决策权重与逻辑：**
+**基本面权重占绝对主导（70%）**。一个营收断崖、经营现金流持续为负（超-4.2亿）的公司，其143元的股价就是空中楼阁。技术面（20%）和资金面（10%）只是确认了这座楼阁开始晃动且无人修复。
+
+**风险与机会识别：**
+**没有机会，只有风险。** 潜在风险就是主力利用最后的流动性完成出货，将股价打回原形。142元的技术支撑在基本面利空面前不堪一击。
+
+**最终结论：对002975，不仅是不参</div>
+<div class="decision-box">
+<div class="decision-title">📋 最终决策</div>
+<div class="decision-metrics">
+<div class="item"><span>评级</span><span><strong>卖出</strong></span></div>
+<div class="item"><span>目标价</span><span>145.0</span></div>
+<div class="item"><span>止损位</span><span>138.0</span></div>
+<div class="item"><span>止盈</span><span>145.0</span></div>
+<div class="item"><span>仓位</span><span>空仓</span></div>
+<div class="item"><span>信心度</span><span>10/10</span></div>
+</div>
+<div style="font-size:12px;color:#636e72;margin-top:6px;">风险: 基本面严重恶化（营收断崖、经营现金流持续为负），技术面超买衰竭，资金面缺乏买盘支撑。价格存在大幅回落风险，任何反弹均为离场机会，切勿抄底。</div>
+</div>
+</div>
+<div class="card">
+  <div class="stock-card-header">
+    <div>
+      <span class="stock-name">天赐材料</span>
+      <span class="stock-code">002709</span>
+    </div>
+    <div class="stock-summary">
+      <span class="price down">¥54.17</span>
+      <span class="change down">-3.13%</span>
+      <span class="score-badge high">4/10</span>
+    </div>
+  </div>
+
+  <div class="signal-box bullish">📈 偏多，逢低可加仓</div>
+
+  <div class="section-title">📈 技术速览</div>
+  <div class="metrics">
+    <div class="metric"><span class="label">MA5 / MA10 / MA20</span><span class="value">53.36 / 50.88 / 50.91</span></div>
+    <div class="metric"><span class="label">MACD 信号</span><span class="value">金叉 柱=0.65</span></div>
+    <div class="metric"><span class="label">RSI / KDJ-J</span><span class="value">54.6 / 97.0</span></div>
+    <div class="metric"><span class="label">布林带宽 / 量比</span><span class="value">19.2% / 1.08 (正常)</span></div>
+    <div class="metric"><span class="label">支撑 / 压力</span><span class="value">41.88 / 64.98</span></div>
+    <div class="metric"><span class="label">ADX / +DI / -DI</span><span class="value">18.5 / 22.5 / 13.8</span></div>
+    <div class="metric"><span class="label">周线 / 背离</span><span class="value">上涨 / 无</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">🤖 天赐材料 AI 视角</div>
+  <div class="ai-section">天赐材料当前呈震荡偏多格局。MA5上穿MA10和MA20形成短期多头排列，MACD柱状线转正且DIF即将上穿DEA，显示动能改善。但KDJ的J值达97，已进入超买区，短期回调压力较大。股价接近布林上轨55.79，构成技术阻力。ADX仅18.5，表明趋势强度不足，行情仍属整理。操作上，建议持有者关注55.8附近压力，若放量滞涨可部分止盈；未入场者等待回踩MA10附近企稳机会。风险在于周线虽涨但日线超买，追高易被套。
+
+以上为AI分析，仅供参考，不构成投资建议。</div>
+</div>
+<div class="card"><div class="section-title">🧠 多智能体分析</div>
+<div style="margin:6px 0;"><span class="agent-tag tech">技术面</span></div>
+<div class="detail-text">天赐材料当前报54.17，短期均线多头排列，价格站上MA5、MA10和MA20，属偏多格局。但KDJ的J值高达96.96，RSI 54.6，短线已进入严重超买区，回调压力显著。MACD虽形成金叉，但ADX仅18.52，趋势强度不足，视为弱势反弹信号。当前价格触及布林带上轨55.79附近，构成直接压力，突破需量能配合（量比1.08，量能温和）。核心压力位64.98，若无法放量上攻，极易在压力区受阻回落；下方支撑看50.91（中轨）及41.88一线。**风险提示**：超买背离，追高风险大，谨防快涨后急调，建议观察能否放量有效站上55.8再行定夺。</div>
+<div style="margin:6px 0;"><span class="agent-tag fund">基本面</span></div>
+<div class="detail-text">基于数据，核心结论如下：
+
+**1. 盈利能力：高表面盈利，暗藏波动**
+最新一期ROE（8.84%）和销售净利率（24.68%）异常飙升，显著高于历史均值（约3%-4%）。这极可能是非经常性损益扰动，而非主业盈利能力质变。剔除该期，公司长期真实盈利能力偏弱。
+
+**2. 财务健康：经营现金流告负，质量堪忧**
+最新一期经营活动现金流净额为**-0.21亿**，出现净流出。这与高企的账面利润形成巨大反差，盈利质量存疑。资产负债率（35.5%）虽可控，但若现金流持续恶化，将侵蚀偿债能力。
+
+**3. 成长性：规模停滞，增长乏力**
+剔除异常值后，观察营收规模，近几期在70亿至166亿区间波动，无</div>
+<div style="margin:6px 0;"><span class="agent-tag flow">资金面</span></div>
+<div class="detail-text">由于缺乏资金流向数据，当前仅能从量价与盘口博弈角度进行推演，核心结论如下：
+
+1.  **资金趋势与主力行为**：量比1.08属于正常范畴，无显著放量，说明**主力资金当日并无明确的进场或出货动作**，处于存量博弈下的观望状态。无法判定是吸筹还是派发，大概率处于“洗盘整理”的过渡期。
+
+2.  **散户与博弈关系**：成交量趋势正常，说明散户交易活跃度一般，多空双方在此价位达成暂时平衡。若股价无大波动，散户无法撬动趋势。
+
+3.  **量价配合与关键信号**：当前缺乏主力驱动，**量价配合度低**。需要警惕，若无持续放量支撑，股价难以突破短期抛压。
+
+4.  **操作建议**：
+    -  </div>
+<div style="margin:8px 0;font-size:13px;line-height:1.7;"><strong>团队讨论:</strong> 会议讨论结论如下：
+
+**一致性**：三个维度均指向“观望/回避”，无根本分歧。技术面提示超买回调，基本面揭示盈利质量差，资金面确认缺乏主力驱动。
+**分歧点**：技术面看到了短期反弹形态，与基本面“纸面利润”的长期隐患形成对冲。
+
+**权重考量**：**基本面为锚，资金面为帆**。基本面的经营现金流为负是重大红灯，一票否决了因季节性波动造成的“估值陷阱”。资金面未放量，印证市场对当前反弹的不认可。技术面的超买信号在此背景下是警示，而非机会。
+
+**核心逻辑**：无法放量突破55.8元强阻力，任何反弹都是减仓良机。市场缺乏真金白银支撑的上涨根基不稳。
+
+**风险与机会**：**下行风险远大于上行机会**。财报“水分”与现金流恶化是核心风险。唯一潜在机会是放量突破压力位，但在基本面改善前概率极低。**建议维持“回避”评级，等待现金流实质性好转**。</div>
+<div class="decision-box">
+<div class="decision-title">📋 最终决策</div>
+<div class="decision-metrics">
+<div class="item"><span>评级</span><span><strong>卖出</strong></span></div>
+<div class="item"><span>目标价</span><span>55.0</span></div>
+<div class="item"><span>止损位</span><span>52.5</span></div>
+<div class="item"><span>止盈</span><span>55.0</span></div>
+<div class="item"><span>仓位</span><span>空仓</span></div>
+<div class="item"><span>信心度</span><span>8/10</span></div>
+</div>
+<div style="font-size:12px;color:#636e72;margin-top:6px;">风险: 经营现金流持续为负，盈利质量堪忧；股价反弹无力突破55.8元强阻力，超买信号明显，下行风险远大于上行机会。</div>
+</div>
+</div>
+<div class="card">
+  <div class="stock-card-header">
+    <div>
+      <span class="stock-name">金 螳 螂</span>
+      <span class="stock-code">002081</span>
+    </div>
+    <div class="stock-summary">
+      <span class="price down">¥4.58</span>
+      <span class="change down">-2.97%</span>
+      <span class="score-badge low">-2/10</span>
+    </div>
+  </div>
+
+  <div class="signal-box neutral">📊 震荡偏弱</div>
+
+  <div class="section-title">📈 技术速览</div>
+  <div class="metrics">
+    <div class="metric"><span class="label">MA5 / MA10 / MA20</span><span class="value">4.77 / 5.07 / 5.50</span></div>
+    <div class="metric"><span class="label">MACD 信号</span><span class="value">-- 柱=-0.16</span></div>
+    <div class="metric"><span class="label">RSI / KDJ-J</span><span class="value">19.1 / 0.5</span></div>
+    <div class="metric"><span class="label">布林带宽 / 量比</span><span class="value">46.9% / 0.40 (缩量)</span></div>
+    <div class="metric"><span class="label">支撑 / 压力</span><span class="value">3.13 / 8.47</span></div>
+    <div class="metric"><span class="label">ADX / +DI / -DI</span><span class="value">15.4 / 22.8 / 27.8</span></div>
+    <div class="metric"><span class="label">周线 / 背离</span><span class="value">下跌 / 无</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">🤖 金 螳 螂 AI 视角</div>
+  <div class="ai-section">### 金 螳 螂（002081）技术分析
+
+**1. 当前趋势判断：空头**  
+股价位于所有短期均线下方，MA5、MA10、MA20呈空头排列，周线趋势向下，ADX值15.4显示趋势偏弱但方向明确偏空。
+
+**2. 关键技术信号：**  
+- MACD死叉运行，绿柱放大，DIF与DEA均在零轴下方，空方动能持续。  
+- RSI 19.1、KDJ的K值6.5、J值0.5均处于严重超卖区，短期或有技术修复需求。  
+- 股价逼近布林下轨（4.21），带宽46.9%显示波动率较高。  
+- 量比0.40，缩量下跌，承接力度不足。
+
+**3. 短期操作建议：**  
+严重超卖可能触发盘中反抽，但均线反压（MA5=4.77）构成强阻力。未站上4.77前不建议抄底，宜观望等待右侧企稳信号。
+
+**4. 主要风险提示：**  
+超卖区钝化风险，股价可能在低位持续阴跌；支撑位3.13较远，止损空间偏大。
+
+以上为AI分析，仅供参考，不构成投资建议。</div>
+</div>
+<div class="card"><div class="section-title">🧠 多智能体分析</div>
+<div style="margin:6px 0;"><span class="agent-tag tech">技术面</span></div>
+<div class="detail-text">金螳螂(002081)当前处于深度空头格局。价格远低于所有短期均线，呈空头排列。RSI(19)与KDJ(6.5/9.5/0.5)均处于严重超卖区，短期或有技术性反抽需求。
+
+然反弹基础薄弱。MACD零轴下方死叉，绿柱放大，空头动能强化。ADX(15.4)显示无趋势，+DI弱于-DI，空方主导。关键压力位为MA5(4.77)，突破需量能配合。当前缩量下跌，量比仅0.39，承接无力。价格紧贴布林下轨(4.21)，若该位有效击穿，将考验历史支撑位3.13。整体中期弱势难改，不建议盲目抄底。</div>
+<div style="margin:6px 0;"><span class="agent-tag fund">基本面</span></div>
+<div class="detail-text">金螳螂(002081)核心症结在于**利润与现金流的严重背离**。近两年营收在130-180亿间波动，但经营活动现金流持续巨额流出（近8期仅2期为微弱正值），表明大量营收是以应收账款形式存在，盈利质量极差。这导致公司尽管账面每股净资产约5.2元，但无法转化为股东价值。
+
+**核心风险：**
+*   **现金黑洞**：主业造血能力丧失，依赖投资活动处置资产回笼现金来平衡。
+*   **成长停滞**：营收与净利润呈缓慢下滑趋势，成长性堪忧。
+*   **财务侵蚀**：高企的应收款项是资产质量的重大隐患。
+
+**综合评价：**
+公司处于建筑装饰行业深度调整期，当前股价4.58元已跌破每股净资产，估值</div>
+<div style="margin:6px 0;"><span class="agent-tag flow">资金面</span></div>
+<div class="detail-text">**1. 资金趋势**
+近10日主力资金仅1天净流入，累计巨额净流出，超大单与大单同步撤离，为空头主导格局。
+
+**2. 主力行为**
+当前处于**派发出货**阶段。1月29日的脉冲式流入无法扭转颓势，次日即放量砸盘，典型的反弹诱多行为。
+
+**3. 散户博弈**
+主力单边流出，散户被迫承接抛压。股价尚未完全崩塌，但承接盘力量极弱，处于"主力走、散户守"的弱势状态。
+
+**4. 量价配合**
+极少量比缩量，为下跌中继形态。1月29日"主力流入+股价涨"短暂有效，但随即变为"主力流出+股价跌"的负反馈，资金与股价同步走弱。
+
+**5. 关键信号**
+**卖出/观望信号**。资金面全面转空，主力护</div>
+<div style="margin:8px 0;font-size:13px;line-height:1.7;"><strong>团队讨论:</strong> 各位，结论很清晰：**一致看空，建议规避。**
+
+技术、基本、资金三个维度指向同一个结果，几乎没有分歧。
+
+-   **技术面**观：深度空头，偶有超卖反抽，但无趋势、无承接，是典型的下跌中继。
+-   **基本面**定调：这是核心。**利润与现金流的严重背离**已将其定性为“价值陷阱”。主业失血，破净是合理的，而非买入理由。
+-   **资金面**验证：主力在利用任何反弹派发出货，形成“主力走、散户守”的负反馈，直接印证了基本面的悲观预期。
+
+**我们的决策权重很明确：**
+**基本面决定方向（利空），技术面提供时机（未到），资金面确认行为（利空）。** 三者共振，是强烈的规避信号。
+
+**投资逻辑与风险识别：**
+唯一潜在机会是超跌后的技术性反抽，但鉴于基本面的“现金黑洞”，这无异于火中取栗，风险收益比极差。最大的风险是误以为“破净=便宜”。
+
+**结论：金螳螂不具备投资价值。在经营现</div>
+<div class="decision-box">
+<div class="decision-title">📋 最终决策</div>
+<div class="decision-metrics">
+<div class="item"><span>评级</span><span><strong>卖出</strong></span></div>
+<div class="item"><span>目标价</span><span>4.70</span></div>
+<div class="item"><span>止损位</span><span>4.30</span></div>
+<div class="item"><span>仓位</span><span>空仓</span></div>
+<div class="item"><span>信心度</span><span>9/10</span></div>
+</div>
+<div style="font-size:12px;color:#636e72;margin-top:6px;">风险: 基本面利润与现金流严重背离，技术面空头排列，资金面主力出货，存在继续阴跌或快速下跌的风险；破净并非买入理由，价值陷阱特征显著，反抽力度弱且无持续性。</div>
+</div>
+</div>
+<div class="card">
+  <div class="stock-card-header">
+    <div>
+      <span class="stock-name">金河生物</span>
+      <span class="stock-code">002688</span>
+    </div>
+    <div class="stock-summary">
+      <span class="price up">¥5.05</span>
+      <span class="change up">+2.43%</span>
+      <span class="score-badge mid">1/10</span>
+    </div>
+  </div>
+
+  <div class="signal-box neutral">📊 震荡偏多</div>
+
+  <div class="section-title">📈 技术速览</div>
+  <div class="metrics">
+    <div class="metric"><span class="label">MA5 / MA10 / MA20</span><span class="value">4.99 / 4.99 / 5.17</span></div>
+    <div class="metric"><span class="label">MACD 信号</span><span class="value">-- 柱=0.01</span></div>
+    <div class="metric"><span class="label">RSI / KDJ-J</span><span class="value">35.9 / 84.6</span></div>
+    <div class="metric"><span class="label">布林带宽 / 量比</span><span class="value">19.0% / 0.90 (正常)</span></div>
+    <div class="metric"><span class="label">支撑 / 压力</span><span class="value">4.71 / 6.27</span></div>
+    <div class="metric"><span class="label">ADX / +DI / -DI</span><span class="value">31.6 / 19.3 / 35.0</span></div>
+    <div class="metric"><span class="label">周线 / 背离</span><span class="value">上涨 / 无</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">🤖 金河生物 AI 视角</div>
+  <div class="ai-section">**技术分析：金河生物（002688）**
+
+1.  **趋势判断：** 当前处于**弱势震荡**格局。股价受MA20（5.17）压制，且-DI（35.0）远大于+DI（19.3），空头趋势主导，ADX 31.6显示趋势动能尚可。
+
+2.  **关键信号：** MACD虽刚金叉但位于零轴下方，动能微弱。KDJ的J值达84.6，接近超买区，短期有回调需求。股价位于布林带中轨下方，属弱势区域。
+
+3.  **操作建议：** 观望为主。若不能放量站稳MA20（5.17），建议逢高减仓。下方关注前低支撑4.71，若跌破则需止损。
+
+4.  **风险提示：** 周线虽为上涨，但日线空头信号明确，需警惕短期回调与周线趋势的背离风险。
+
+以上为AI分析，仅供参考，不构成投资建议。</div>
+</div>
+<div class="card"><div class="section-title">🧠 多智能体分析</div>
+<div style="margin:6px 0;"><span class="agent-tag tech">技术面</span></div>
+<div class="detail-text">**分析报告（002688 金河生物）**
+当前现价5.05，受阻于MA20（5.17）中线，均线空排；MACD零轴下方弱势金叉，多头动能微弱。ADX达31.6，-DI占优，空头趋势明确。
+
+**关键点：**
+- **支撑/阻力：** 下轨4.67支撑，上轨5.66与中线5.17构成反压；强支撑看4.71。  
+- **形态指标：** KDJ的J值84.6超买预警，RSI 35.9偏弱，量比0.89无量反弹。  
+- **综合判断：** 短期超跌反弹遇阻，中期仍属空头。  
+
+**策略与风险：** 若放量站稳5.17方可缓解下行风险，否则需防二次探底4.67；无量冲压5.66注意高抛，跌破4.</div>
+<div style="margin:6px 0;"><span class="agent-tag fund">基本面</span></div>
+<div class="detail-text">基于数据，核心判断如下：
+
+**业绩主因：** 2025年全年（[2]期）归母净利润仅2756万，净利率-0.38%，主因Q4单季大额亏损，侵蚀前三季度成果。2026年Q1（[1]期）盈利虽恢复至6230万，但已显波动。
+
+**现金流与财务健康：**
+*   **预警信号：** 2026年Q1经营性现金流净额仅1863万，远低于净利润（6230万），现金利润比极差。同时负债率攀升至57%，创8期新高，偿债压力加重。
+*   **模式判断：** 长期“投资活动净流出、筹资活动净流入”，属典型的借债扩张模式，内生造血能力存疑。
+
+**估值警示：** 当前价5.05元，基于波动剧烈的2025年全年E</div>
+<div style="margin:6px 0;"><span class="agent-tag flow">资金面</span></div>
+<div class="detail-text">数据受限，仅基于量价展开。报告如下：
+
+**金河生物(002688) 资金面分析**
+
+1.  **资金趋势与行为研判**：量比0.89，成交趋于平淡，市场参与度减弱。未获大资金进驻迹象，当前大概率处于**洗盘整理或散户主导的冷清期**，无明确拉升或出货动作。
+2.  **量价配合**：股价5.05元并非常态放量。若价平量缩，为弱势盘整；若价跌量缩，表明抛压衰竭但无买盘承接。整体缺乏上攻动能。
+3.  **关键信号**：量能未异动，**方向不明，观望为主**。无增量资金入场前，难有趋势行情。
+4.  **操作建议**：量比低于1且无量价共振，资金面呈中性偏弱。建议**空仓或轻仓观望**，等待放</div>
+<div style="margin:8px 0;font-size:13px;line-height:1.7;"><strong>团队讨论:</strong> 会议结论：一致看空，规避为主。
+
+**1. 一致性与分歧**
+三方高度一致：均指向弱势。
+*   **技术面**认为短期超跌反弹遇阻，中期空头。
+*   **基本面**揭示盈利不稳、现金流与利润背离，建议规避。
+*   **资金面**判定无量无行情，缺乏主力资金，建议观望。
+*   **唯一分歧**在于风险级别：技术面提供了5.17站稳的短线博弈机会，但基本面给出了143倍市盈率的根本性高估预警，否决了持仓理由。
+
+**2. 权重与逻辑**
+给予**基本面最高权重**。高负债（57%）、弱的现金利润比是硬伤，决定了企业内生价值存疑。技术面和资金面的弱势仅是内在价值缺乏共识的市场表现。当前环境下，无业绩支撑的股票难获资金青睐。
+
+**3. 风险与机会**
+*   **核心风险**：基本面上，高负债叠加经营性现金流枯竭，在信贷收紧环境下易发流动性危机，这是致命伤。
+*   **虚假机会**：技</div>
+<div class="decision-box">
+<div class="decision-title">📋 最终决策</div>
+<div class="decision-metrics">
+<div class="item"><span>评级</span><span><strong>卖出</strong></span></div>
+<div class="item"><span>目标价</span><span>5.17</span></div>
+<div class="item"><span>止损位</span><span>4.60</span></div>
+<div class="item"><span>止盈</span><span>5.17</span></div>
+<div class="item"><span>仓位</span><span>空仓</span></div>
+<div class="item"><span>信心度</span><span>9/10</span></div>
+</div>
+<div style="font-size:12px;color:#636e72;margin-top:6px;">风险: 高负债叠加经营性现金流枯竭，易发流动性危机；基本面与资金面双弱，反弹难持续，下行风险远大于上行空间。</div>
+</div>
+</div>
+<div class="footer">⚠️ 以上分析仅供参考，不构成投资建议</div>
+</body></html>

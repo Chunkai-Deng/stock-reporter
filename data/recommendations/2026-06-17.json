@@ -1,0 +1,56 @@
+{
+  "date": "2026-06-17",
+  "pre_screened_count": 2446,
+  "picks": [
+    {
+      "code": "300665",
+      "name": "飞鹿股份",
+      "price": NaN,
+      "score": 15.0,
+      "strategies": [
+        "📈净利增长#1"
+      ],
+      "industry": ""
+    },
+    {
+      "code": "300823",
+      "name": "建科智能",
+      "price": 15.79,
+      "score": 10.0,
+      "strategies": [
+        "📊小市值#5"
+      ],
+      "industry": "机械设备-专用设备-其他"
+    },
+    {
+      "code": "300489",
+      "name": "光智科技",
+      "price": 219.83,
+      "score": 7.5,
+      "strategies": [
+        "💪主力资金#1"
+      ],
+      "industry": "电子-光学光电子-光学元"
+    },
+    {
+      "code": "603011",
+      "name": "合锻智能",
+      "price": 36.86,
+      "score": 6.5,
+      "strategies": [
+        "💪主力资金#2"
+      ],
+      "industry": "机械设备-专用设备-其他"
+    },
+    {
+      "code": "301373",
+      "name": "凌玮科技",
+      "price": 201.13,
+      "score": 5.5,
+      "strategies": [
+        "💪主力资金#3"
+      ],
+      "industry": "基础化工-化学制品-其他"
+    }
+  ]
+}
