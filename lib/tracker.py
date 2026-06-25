@@ -116,13 +116,16 @@ def _fetch_current_price(code: str) -> Optional[float]:
     return None
 
 
-def calc_performance() -> Optional[str]:
+def calc_performance(suffix: str = "") -> Optional[str]:
     """Calculate performance of yesterday's picks against current prices.
+
+    Args:
+        suffix: Same suffix used when saving (e.g. '_am', '_pm')
 
     Returns a WeCom-formatted string or None if no yesterday record.
     """
     yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    path = _rec_path(yesterday)
+    path = _rec_path(yesterday, suffix)
     if not os.path.exists(path):
         return None
 

@@ -324,23 +324,47 @@ def _fetch_current_prices(codes: list[str]) -> dict[str, float]:
     return prices
 
 
-def build_morning_linkage(today: str, top_gainer_codes: set[str]) -> str:
-    """Build the morning linkage section of the report.
+def _merge_picks(suffixes: list[str], date_str: str) -> list[dict]:
+    """Load picks from multiple suffix files, merge and deduplicate by code.
 
-    Returns empty string if no morning picks found.
+    First file's picks take priority when duplicates exist.
     """
-    picks = _load_picks(today)
+    seen: set[str] = set()
+    merged: list[dict] = []
+    for suffix in suffixes:
+        picks = _load_picks(date_str, suffix=suffix)
+        if not picks:
+            continue
+        for p in picks:
+            code = p.get("code", "")
+            if code and code not in seen:
+                seen.add(code)
+                merged.append(p)
+    return merged
+
+
+def _build_linkage_section(
+    picks: list[dict],
+    title: str,
+    price_label: str,
+    top_gainer_codes: set[str],
+) -> str:
+    """Build a linkage performance section from a list of picks.
+
+    Args:
+        picks: List of pick dicts with code, name, price.
+        title: Section title, e.g. "今日早间推荐表现"
+        price_label: Label for original price, e.g. "早" or "昨"
+        top_gainer_codes: Set of codes that made today's top gainers.
+    """
     if not picks:
         return ""
 
-    # Fetch current prices for morning picks
     pick_codes = [p.get("code", "") for p in picks if p.get("code")]
     current_prices = _fetch_current_prices(pick_codes)
 
     lines = [
-        "\n🔗 晨间联动",
-        "━" * 20,
-        "  今日早间推荐表现:",
+        f"  {title}:",
         "",
     ]
 
@@ -350,21 +374,20 @@ def build_morning_linkage(today: str, top_gainer_codes: set[str]) -> str:
     for i, pick in enumerate(picks, 1):
         code = pick.get("code", "")
         name = pick.get("name", "")
-        morning_price = pick.get("price", 0)
+        orig_price = pick.get("price", 0)
         current_price = current_prices.get(code)
 
-        # Check if this stock made today's top gainers (regardless of price)
         in_top = code in top_gainer_codes
         if in_top:
             highlighted.add(code)
         highlight = " 🔥 同时上榜!" if in_top else ""
 
-        if current_price and morning_price > 0:
-            change_pct = (current_price - morning_price) / morning_price * 100
+        if current_price and orig_price > 0:
+            change_pct = (current_price - orig_price) / orig_price * 100
             emoji = "✅" if change_pct >= 0 else "❌"
             lines.append(
                 f"  {i}. {code} {name}: "
-                f"早¥{morning_price:.2f}→现¥{current_price:.2f} ({change_pct:+.1f}%) {emoji}{highlight}"
+                f"{price_label}¥{orig_price:.2f}→现¥{current_price:.2f} ({change_pct:+.1f}%) {emoji}{highlight}"
             )
             if change_pct >= 0:
                 up_count += 1
@@ -383,65 +406,25 @@ def build_morning_linkage(today: str, top_gainer_codes: set[str]) -> str:
     return "\n".join(lines)
 
 
-def build_yesterday_linkage(today: str, top_gainer_codes: set[str]) -> str:
-    """Build the yesterday-PM linkage section.
+def build_morning_linkage(today: str, top_gainer_codes: set[str]) -> str:
+    """Build the morning linkage section: load _am + _am_main, merge, compare.
 
-    Loads previous trading day's 14:00 PM screening data and compares
-    against today's top gainers. Returns empty string if no PM data found.
+    Returns empty string if no morning picks found.
+    """
+    picks = _merge_picks(["_am", "_am_main"], today)
+    return _build_linkage_section(picks, "今日早间推荐表现", "早", top_gainer_codes)
+
+
+def build_yesterday_linkage(today: str, top_gainer_codes: set[str]) -> str:
+    """Build the yesterday-PM linkage section: load _pm + _pm_main, merge, compare.
+
+    Returns empty string if no PM data found.
     """
     from datetime import datetime as dt, timedelta
 
     yesterday = (dt.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    picks = _load_picks(yesterday, suffix="_pm")
-    if not picks:
-        return ""
-
-    pick_codes = [p.get("code", "") for p in picks if p.get("code")]
-    current_prices = _fetch_current_prices(pick_codes)
-
-    lines = [
-        "\n🔗 昨日联动 (14:00选股)",
-        "━" * 20,
-        f"  昨日下午推荐表现:",
-        "",
-    ]
-
-    up_count = 0
-    highlighted = set()
-
-    for i, pick in enumerate(picks, 1):
-        code = pick.get("code", "")
-        name = pick.get("name", "")
-        pm_price = pick.get("price", 0)
-        current_price = current_prices.get(code)
-
-        in_top = code in top_gainer_codes
-        if in_top:
-            highlighted.add(code)
-        highlight = " 🔥 同时上榜!" if in_top else ""
-
-        if current_price and pm_price > 0:
-            change_pct = (current_price - pm_price) / pm_price * 100
-            emoji = "✅" if change_pct >= 0 else "❌"
-            lines.append(
-                f"  {i}. {code} {name}: "
-                f"昨¥{pm_price:.2f}→现¥{current_price:.2f} ({change_pct:+.1f}%) {emoji}{highlight}"
-            )
-            if change_pct >= 0:
-                up_count += 1
-        else:
-            lines.append(f"  {i}. {code} {name}: 数据获取失败")
-
-    total = len(picks)
-    win_rate = up_count / total * 100 if total > 0 else 0
-    summary = f"\n  胜率: {up_count}/{total} ({win_rate:.0f}%)"
-
-    if highlighted:
-        summary += f" | 上榜: {len(highlighted)}只"
-
-    lines.append(summary)
-
-    return "\n".join(lines)
+    picks = _merge_picks(["_pm", "_pm_main"], yesterday)
+    return _build_linkage_section(picks, "昨日下午推荐表现", "昨", top_gainer_codes)
 
 
 # ── Message builder ──────────────────────────────────────────────────
@@ -493,15 +476,16 @@ def build_board_message(
     return "\n".join(lines)
 
 
-def build_linkage_message(morning_section: str) -> str:
-    """Build a standalone morning linkage message."""
+def build_linkage_message(section: str, title: str = "晨间联动") -> str:
+    """Build a standalone linkage message with custom title."""
     t = datetime.now().strftime("%H:%M")
     today = datetime.now().strftime("%Y-%m-%d")
+    emoji = "📈" if title == "晨间联动" else "🔗"
 
     lines = [
-        f"📈 晨间联动  {today} {t}",
+        f"{emoji} {title}  {today} {t}",
         "━" * 20,
-        morning_section,
+        section,
         "",
         "⚠️ 仅供参考，不构成投资建议。",
     ]
@@ -590,12 +574,12 @@ def main():
     # Message 3: 晨间联动
     msg3 = ""
     if morning_section:
-        msg3 = build_linkage_message(morning_section)
+        msg3 = build_linkage_message(morning_section, title="晨间联动")
         print(msg3)
     # Message 4: 昨日联动
     msg4 = ""
     if yesterday_section:
-        msg4 = build_linkage_message(yesterday_section)
+        msg4 = build_linkage_message(yesterday_section, title="昨日联动")
         print(msg4)
 
     if push:

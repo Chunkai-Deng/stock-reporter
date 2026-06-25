@@ -98,10 +98,7 @@ def main():
         "--composite", action="store_true", help="综合选股: pre-screening + 5 strategies + cross-scoring + AI portfolio"
     )
     parser.add_argument(
-        "--pm", action="store_true", help="午后模式: 单独保存数据到 _pm 文件（等同于 --suffix _pm）"
-    )
-    parser.add_argument(
-        "--suffix", type=str, default="", help="推荐文件后缀，如 _am / _pm，不传则不额外保存"
+        "--suffix", type=str, default="", help="推荐文件后缀，如 _am / _pm"
     )
     parser.add_argument(
         "--send", action="store_true", help="Send results to WeCom webhook"
@@ -119,7 +116,7 @@ def main():
 
     # ── 综合选股: composite mode ─────────────────────────────────────
     if args.composite:
-        suffix = args.suffix if args.suffix else ("_pm" if args.pm else "")
+        suffix = args.suffix
         msg = run_all_screenings(top_n=args.top, suffix=suffix)
         print(msg)
         if args.send:

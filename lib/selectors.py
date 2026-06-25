@@ -375,6 +375,53 @@ def _enrich_prices_from_tencent(picks: list[dict]) -> None:
             p["price"] = prices[code]
 
 
+def _enrich_tech_scores(picks: list[dict]) -> None:
+    """Compute technical indicator score + weekly trend for each pick in-place.
+
+    Uses the same score_stock() from cloud_stock_reporter as the afternoon scan.
+    Adds 'tech_score' (int) and 'weekly_trend' (str) to each pick dict.
+    """
+    if not picks:
+        return
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _analyze_one(pick: dict):
+        code = pick.get("code", "")
+        price = pick.get("price", 0)
+        try:
+            from cloud_stock_reporter import (
+                code_prefix, fetch_kline, compute_indicators,
+                fetch_weekly_trend, score_stock,
+            )
+            prefix = code_prefix(code)
+            symbol = f"{prefix}{code}"
+            df = fetch_kline(symbol)
+            if df is None:
+                return
+            indicators = compute_indicators(df)
+            if indicators is None:
+                return
+            weekly = fetch_weekly_trend(symbol)
+            score = score_stock(
+                price=price,
+                change_pct=0.0,
+                indicators=indicators,
+                weekly=weekly,
+            )
+            pick["tech_score"] = score
+            pick["weekly_trend"] = weekly.get("weekly_trend", "")
+        except Exception:
+            pass
+
+    with ThreadPoolExecutor(max_workers=min(len(picks), 4)) as executor:
+        futures = {executor.submit(_analyze_one, p): p for p in picks}
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception:
+                pass
+
+
 def _composite_screening(top_n: int = 5, suffix: str = "") -> str:
     """Run all 5 strategies, cross-score stocks, return top N composite picks.
 
@@ -521,14 +568,20 @@ def _composite_screening(top_n: int = 5, suffix: str = "") -> str:
     # ── Fetch real-time prices from Tencent ─────────────────────────
     _enrich_prices_from_tencent(picks_for_tracking)
 
+    # ── Compute technical scores (same logic as afternoon scan) ─────
+    _enrich_tech_scores(picks_for_tracking)
+
     # ── Build portfolio summary (with accurate Tencent prices) ─────
     picks_summary_lines = []
     for idx, pick in enumerate(picks_for_tracking, 1):
         price_str = f"¥{pick['price']:.2f}" if pick.get("price") else ""
+        t_score = pick.get("tech_score")
+        t_weekly = pick.get("weekly_trend", "")
+        tech_str = f" 技术:{t_score:+d} 周线:{t_weekly}" if t_score is not None else ""
         picks_summary_lines.append(
             f"{idx}. {pick['code']} {pick['name']} {price_str} "
             f"行业:{pick.get('industry', '未知')} "
-            f"评分:{pick['score']:.1f} 命中:{','.join(pick['strategies'])}"
+            f"评分:{pick['score']:.1f} 命中:{','.join(pick['strategies'])}{tech_str}"
         )
 
     picks_summary = "\n".join(picks_summary_lines)
@@ -563,7 +616,7 @@ def _composite_screening(top_n: int = 5, suffix: str = "") -> str:
         "\U0001f4cb 综合精选 Top " + str(top_n),
         "━" * 24,
         pre_stats.rstrip("\n") if pre_stats else "",
-        "动态权重打分 + 行业分散 + 多策略交叉",
+        "动态权重打分 + 多策略交叉",
         "",
     ]
     if pre_screened_codes and excluded_by_prescreen > 0:
@@ -571,8 +624,9 @@ def _composite_screening(top_n: int = 5, suffix: str = "") -> str:
             f"（策略命中 {total_hits} 次，预筛选排除 {excluded_by_prescreen} 次）\n"
         )
 
-    # Build price lookup from Tencent-enriched picks
+    # Build price + tech lookup from enriched picks
     price_map = {p["code"]: p["price"] for p in picks_for_tracking}
+    tech_map = {p["code"]: p for p in picks_for_tracking}
 
     for idx, (score_val, n_strat, code, info) in enumerate(selected, 1):
         name = info["name"]
@@ -582,9 +636,19 @@ def _composite_screening(top_n: int = 5, suffix: str = "") -> str:
             hit_strs.append(f"{sname}#{rank}")
         hits_line = " + ".join(hit_strs)
 
+        # Technical score & weekly trend (same scoring as afternoon scan)
+        tp = tech_map.get(code, {})
+        t_score = tp.get("tech_score")
+        t_weekly = tp.get("weekly_trend", "")
+        if t_score is not None:
+            weekly_arrow = "↑" if t_weekly == "上涨" else ("↓" if t_weekly == "下跌" else "→")
+            tech_str = f"技术:{t_score:+d} 周线{weekly_arrow} | "
+        else:
+            tech_str = ""
+
         industry_tag = f" [{industry}]" if industry else ""
         lines.append(f"{idx}. {code} {name}{industry_tag}")
-        lines.append(f"   策略: {len(info['hits'])}个 | 得分: {score_val:.1f}  |  {hits_line}")
+        lines.append(f"   策略: {len(info['hits'])}个 | 得分: {score_val:.1f} | {tech_str} {hits_line}")
 
         row = info["best_row"]
         metrics = []
@@ -637,7 +701,7 @@ def _composite_screening(top_n: int = 5, suffix: str = "") -> str:
         ]
         save_recommendation(today, clean_picks, pre_screened_count, suffix=suffix)
         # Append yesterday's performance review
-        perf = calc_performance()
+        perf = calc_performance(suffix)
         if perf:
             lines.append("\n\n" + perf)
     except Exception as e:
