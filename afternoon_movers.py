@@ -133,12 +133,15 @@ def fetch_all_real_time_quotes(codes: list[str]) -> dict[str, dict]:
                     # Tencent turnover is in 万元, convert to 元
                     turnover = float(fields[37]) if len(fields) > 37 and fields[37] else 0.0
                     turnover = turnover * 10000
+                    # PE (市盈率) from field 39
+                    pe = float(fields[39]) if len(fields) > 39 and fields[39] else 0.0
                     results[code] = {
                         "code": code,
                         "name": name,
                         "price": price,
                         "change_pct": change_pct,
                         "turnover": turnover,
+                        "pe": pe,
                         "industry": "",  # Tencent doesn't provide industry
                     }
                 except (ValueError, IndexError):
@@ -225,15 +228,36 @@ def _analyze_gainer(stock: dict) -> Optional[dict]:
         if j_val is not None and (j_val > 100 or j_val < 0):
             signals.append("KDJ极端")
 
+        # Convert indicators to JSON-safe types
+        indicators_safe = _json_safe_indicators(indicators)
+
         return {
             **stock,
             "score": score,
             "weekly_trend": weekly.get("weekly_trend", ""),
             "signals": signals[:3],  # top 3 signals
-            "vol_ratio": indicators.get("vol_ratio"),
+            "indicators": indicators_safe,
         }
     except Exception:
         return None
+
+
+def _json_safe_indicators(ind: dict) -> dict:
+    """Convert indicator values to JSON-serializable Python types."""
+    import numpy as np
+    result = {}
+    for k, v in ind.items():
+        if v is None:
+            result[k] = None
+        elif isinstance(v, (np.integer,)):
+            result[k] = int(v)
+        elif isinstance(v, (np.floating,)):
+            result[k] = float(v)
+        elif isinstance(v, (np.bool_,)):
+            result[k] = bool(v)
+        else:
+            result[k] = v
+    return result
 
 
 def enrich_with_indicators(stocks: list[dict]) -> list[dict]:
@@ -435,11 +459,14 @@ def _fmt_stock_line(idx: int, s: dict) -> str:
     sign = "+" if s.get("change_pct", 0) >= 0 else ""
     score_str = f"评分:{s['score']}" if s.get("score") is not None else "评分:--"
     industry = f" [{s.get('industry','')}]" if s.get("industry") else ""
+    pe_str = f"PE:{s['pe']:.1f}" if s.get("pe") and s["pe"] > 0 else ""
 
     line = (
         f"  {idx:>2}. {s['code']} {s['name']}{industry} "
         f"¥{s['price']:.2f} ({sign}{s['change_pct']:.2f}%)  {score_str}"
     )
+    if pe_str:
+        line += f"  {pe_str}"
 
     signals = s.get("signals", [])
     if signals:
@@ -493,6 +520,59 @@ def build_linkage_message(section: str, title: str = "晨间联动") -> str:
 
 
 # ── Main ─────────────────────────────────────────────────────────────
+
+
+def save_closing_scan_data(
+    main_board: list[dict],
+    chinext: list[dict],
+    date_str: str = "",
+) -> str:
+    """Save closing scan results to JSON with full technical indicators.
+
+    Returns the file path where data was saved.
+    """
+    if not date_str:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
+    data_dir = os.path.join(_SCRIPT_DIR, "data", "closing_scans")
+    os.makedirs(data_dir, exist_ok=True)
+
+    now = datetime.now()
+    timestamp = now.strftime("%H:%M:%S")
+
+    def _strip_for_json(board: list[dict]) -> list[dict]:
+        """Keep only JSON-safe fields, drop internal references."""
+        result = []
+        for s in board:
+            item = {
+                "code": s.get("code", ""),
+                "name": s.get("name", ""),
+                "price": s.get("price"),
+                "change_pct": s.get("change_pct"),
+                "turnover": s.get("turnover"),
+                "pe": s.get("pe"),
+                "industry": s.get("industry", ""),
+                "score": s.get("score"),
+                "weekly_trend": s.get("weekly_trend", ""),
+                "signals": s.get("signals", []),
+                "indicators": s.get("indicators", {}),
+            }
+            result.append(item)
+        return result
+
+    payload = {
+        "date": date_str,
+        "time": timestamp,
+        "main_board": _strip_for_json(main_board),
+        "chinext": _strip_for_json(chinext),
+    }
+
+    filepath = os.path.join(data_dir, f"{date_str}.json")
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    logger.info("Closing scan data saved to %s", filepath)
+    return filepath
 
 
 def main():
@@ -551,13 +631,18 @@ def main():
         for s in gainers:
             all_gainer_codes.add(s["code"])
 
-    # Step 3: Linkage sections
+    # Step 4: Save closing scan data (before linkage to keep data clean)
+    main_board_data = board_results.get("🔵 主板", [])
+    chinext_data = board_results.get("🟢 创业板", [])
+    save_closing_scan_data(main_board_data, chinext_data, today)
+
+    # Step 5: Linkage sections
     morning_section = build_morning_linkage(today, all_gainer_codes)
     yesterday_section = build_yesterday_linkage(today, all_gainer_codes)
 
-    # Step 4: Build and send (split into multiple messages for WeChat limit)
-    main_gainers = board_results.get("🔵 主板", [])
-    chinext_gainers = board_results.get("🟢 创业板", [])
+    # Step 6: Build and send (split into multiple messages for WeChat limit)
+    main_gainers = main_board_data
+    chinext_gainers = chinext_data
 
     total = 2
     if morning_section:

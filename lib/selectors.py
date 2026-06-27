@@ -379,11 +379,29 @@ def _enrich_tech_scores(picks: list[dict]) -> None:
     """Compute technical indicator score + weekly trend for each pick in-place.
 
     Uses the same score_stock() from cloud_stock_reporter as the afternoon scan.
-    Adds 'tech_score' (int) and 'weekly_trend' (str) to each pick dict.
+    Adds 'tech_score' (int), 'weekly_trend' (str), and full 'indicators' dict
+    to each pick dict.
     """
     if not picks:
         return
     from concurrent.futures import ThreadPoolExecutor, as_completed
+    import numpy as np
+
+    def _safe_indicators(ind: dict) -> dict:
+        """Convert indicator values to JSON-serializable Python types."""
+        result = {}
+        for k, v in ind.items():
+            if v is None:
+                result[k] = None
+            elif isinstance(v, (np.integer,)):
+                result[k] = int(v)
+            elif isinstance(v, (np.floating,)):
+                result[k] = float(v)
+            elif isinstance(v, (np.bool_,)):
+                result[k] = bool(v)
+            else:
+                result[k] = v
+        return result
 
     def _analyze_one(pick: dict):
         code = pick.get("code", "")
@@ -410,6 +428,7 @@ def _enrich_tech_scores(picks: list[dict]) -> None:
             )
             pick["tech_score"] = score
             pick["weekly_trend"] = weekly.get("weekly_trend", "")
+            pick["indicators"] = _safe_indicators(indicators)
         except Exception:
             pass
 
