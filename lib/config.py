@@ -79,6 +79,19 @@ class Config:
         default_factory=lambda: _env_or("SCREENING_ENABLED", "false").lower() == "true"
     )
 
+    # Limit-Up Backtest
+    limit_up_backtest_db: str = field(
+        default_factory=lambda: _env_or(
+            "LIMIT_UP_BACKTEST_DB", "data/limit_up_backtest/limit_up_backtest.db"
+        )
+    )
+    limit_up_backtest_lookback: int = field(
+        default_factory=lambda: int(_env_or("LIMIT_UP_BACKTEST_LOOKBACK", "90"))
+    )
+    limit_up_backtest_max_workers: int = field(
+        default_factory=lambda: int(_env_or("LIMIT_UP_BACKTEST_MAX_WORKERS", "4"))
+    )
+
     def __post_init__(self):
         self.stock_codes = [c.strip() for c in self.stock_codes_raw.split(",") if c.strip()]
 

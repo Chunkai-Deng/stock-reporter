@@ -596,70 +596,13 @@ body {{
 # Helpers
 # ═══════════════════════════════════════════════════════════════════════
 
-def _score_stock(price, change_pct, indicators, weekly) -> int:
-    """Recompute score inline (same logic as cloud_stock_reporter.score_stock)."""
-    score = 0
-    # MA
-    if price and indicators.get("ma20"):
-        score += 1 if price > indicators["ma20"] else -1
-    ma5, ma10 = indicators.get("ma5"), indicators.get("ma10")
-    if ma5 and ma10:
-        score += 1 if ma5 > ma10 else -1
-    # MACD cross
-    cross = indicators.get("macd_cross", "")
-    if cross == "金叉":
-        score += 1
-    elif cross == "死叉":
-        score -= 1
-    # RSI
-    rsi = indicators.get("rsi")
-    if rsi is not None:
-        if rsi < 30:
-            score += 1
-        elif rsi > 70:
-            score -= 1
-    # Bollinger
-    if price and indicators.get("bb_upper") and indicators.get("bb_lower"):
-        if price >= indicators["bb_upper"] * 0.99:
-            score -= 1
-        elif price <= indicators["bb_lower"] * 1.01:
-            score += 1
-    # Volume
-    vol_trend = indicators.get("vol_trend", "")
-    if vol_trend == "放量":
-        score += 1 if change_pct >= 0 else -1
-    # KDJ
-    j = indicators.get("j")
-    if j is not None:
-        if j > 100:
-            score -= 1
-        elif j < 0:
-            score += 1
-    # ADX
-    adx = indicators.get("adx")
-    if adx is not None and adx > 40:
-        plus_di = indicators.get("plus_di")
-        minus_di = indicators.get("minus_di")
-        if plus_di and minus_di and plus_di > minus_di:
-            score += 1
-        else:
-            score -= 1
-    # Divergence
-    div = indicators.get("divergence", "")
-    if div == "顶背离":
-        score -= 2
-    elif div == "底背离":
-        score += 2
-    # Weekly
-    wt = weekly.get("weekly_trend", "")
-    if wt == "上涨":
-        score += 1
-    elif wt == "下跌":
-        score -= 1
-    return max(-10, min(10, score))
+def _score_stock(price, change_pct, indicators, weekly) -> float:
+    """Recompute score using the canonical score_stock (auto-weights if available)."""
+    from cloud_stock_reporter import score_stock
+    return score_stock(price, change_pct, indicators, weekly)
 
 
-def _signal_display(score: int, divergence: str) -> tuple:
+def _signal_display(score: float, divergence: str) -> tuple:
     """Return (text, css_class) for the signal display."""
     if divergence == "顶背离" and score <= -1:
         return "⚠️ 卖出信号 — 顶背离", "bearish"

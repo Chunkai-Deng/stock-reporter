@@ -484,100 +484,148 @@ def detect_divergence(close, rsi_s, macd_s, window: int = 5) -> str:
 # ── Trading Signal Analysis ──────────────────────────────────────────
 
 def score_stock(price: float, change_pct: float,
-                indicators: dict, weekly: dict) -> int:
+                indicators: dict, weekly: dict,
+                weight_config: dict = None) -> float:
     """Score a stock based on technical indicators (0 = neutral, + bullish, - bearish).
 
-    Uses MA, MACD, RSI, Bollinger, KDJ, Volume, ADX, Divergence, Weekly trend
-    to produce a composite score.  Returns a single integer.
-    """
-    # Unpack indicators
-    ma5 = indicators["ma5"]
-    ma10 = indicators["ma10"]
-    ma20 = indicators["ma20"]
-    macd_val = indicators["macd"]
-    macd_signal = indicators["macd_signal"]
-    rsi = indicators["rsi"]
-    bb_upper = indicators["bb_upper"]
-    bb_lower = indicators["bb_lower"]
-    bb_width = indicators["bb_width_pct"]
-    j_val = indicators["j"]
-    adx = indicators["adx"]
-    plus_di = indicators["plus_di"]
-    minus_di = indicators["minus_di"]
-    divergence = indicators["divergence"]
-    weekly_trend = weekly.get("weekly_trend", "")
-    macd_cross = indicators["macd_cross"]
-    vol_trend = indicators["vol_trend"]
+    Uses MA, MACD, RSI, Bollinger, KDJ, Volume, ADX, Divergence, Weekly trend.
 
-    score = 0
+    If weight_config is provided, uses optimized per-dimension weights.
+    When weight_config=None (default), auto-loads weight_config.json if it exists.
+    Falls back to equal weights when no config file is found.
+    """
+    # Auto-load weight config by default when available
+    if weight_config is None:
+        weight_config = _load_weight_config()
+
+    # Resolve per-dimension weights (default 1.0 = equal weight)
+    w = _resolve_weights(weight_config)
+
+    # Unpack indicators
+    ma5 = indicators.get("ma5")
+    ma10 = indicators.get("ma10")
+    ma20 = indicators.get("ma20")
+    rsi = indicators.get("rsi")
+    bb_upper = indicators.get("bb_upper")
+    bb_lower = indicators.get("bb_lower")
+    j_val = indicators.get("j")
+    adx = indicators.get("adx")
+    plus_di = indicators.get("plus_di")
+    minus_di = indicators.get("minus_di")
+    divergence = indicators.get("divergence", "")
+    weekly_trend = weekly.get("weekly_trend", "")
+    macd_cross = indicators.get("macd_cross", "")
+    vol_trend = indicators.get("vol_trend", "")
+
+    score = 0.0
 
     # -- MA --
     if price and ma20:
         if price > ma20:
-            score += 1
+            score += 1 * w["d1"]
         else:
-            score -= 1
-    if ma5 and ma10:
+            score -= 1 * w["d1"]
+    if ma5 is not None and ma10 is not None:
         if ma5 > ma10:
-            score += 1
+            score += 1 * w["d2"]
         else:
-            score -= 1
+            score -= 1 * w["d2"]
 
     # -- MACD --
     if macd_cross == "金叉":
-        score += 1
+        score += 1 * w["d3"]
     elif macd_cross == "死叉":
-        score -= 1
+        score -= 1 * w["d3"]
 
     # -- RSI --
     if rsi is not None:
         if rsi < 30:
-            score += 1
+            score += 1 * w["d4"]
         elif rsi > 70:
-            score -= 1
+            score -= 1 * w["d4"]
 
     # -- Bollinger --
     if price and bb_upper and bb_lower:
         if price >= bb_upper * 0.99:
-            score -= 1
+            score -= 1 * w["d5"]
         elif price <= bb_lower * 1.01:
-            score += 1
+            score += 1 * w["d5"]
 
     # -- Volume --
     if vol_trend == "放量":
         if change_pct >= 0:
-            score += 1
+            score += 1 * w["d6"]
         else:
-            score -= 1
+            score -= 1 * w["d6"]
 
     # -- KDJ --
     if j_val is not None:
         if j_val > 100:
-            score -= 1
+            score -= 1 * w["d7"]
         elif j_val < 0:
-            score += 1
+            score += 1 * w["d7"]
 
     # -- ADX --
     if adx is not None:
         if adx > 40:
-            if plus_di and minus_di and plus_di > minus_di:
-                score += 1
+            if plus_di is not None and minus_di is not None and plus_di > minus_di:
+                score += 1 * w["d8"]
             else:
-                score -= 1
+                score -= 1 * w["d8"]
 
-    # -- Divergence --
+    # -- Divergence (base weight x2) --
     if divergence == "顶背离":
-        score -= 2
+        score -= 2 * w["d9"]
     elif divergence == "底背离":
-        score += 2
+        score += 2 * w["d9"]
 
     # -- Weekly trend --
     if weekly_trend == "上涨":
-        score += 1
+        score += 1 * w["d10"]
     elif weekly_trend == "下跌":
-        score -= 1
+        score -= 1 * w["d10"]
 
-    return score
+    return round(score, 1)
+
+
+def _resolve_weights(weight_config: dict | None) -> dict[str, float]:
+    """Extract per-dimension weights from config, defaulting to 1.0."""
+    dims = weight_config.get("dimensions", {}) if weight_config else {}
+    return {
+        "d1": dims.get("d1_price_above_ma20", {}).get("weight", 1.0),
+        "d2": dims.get("d2_ma5_above_ma10", {}).get("weight", 1.0),
+        "d3": dims.get("d3_macd_cross", {}).get("weight", 1.0),
+        "d4": dims.get("d4_rsi", {}).get("weight", 1.0),
+        "d5": dims.get("d5_bollinger", {}).get("weight", 1.0),
+        "d6": dims.get("d6_volume", {}).get("weight", 1.0),
+        "d7": dims.get("d7_kdj", {}).get("weight", 1.0),
+        "d8": dims.get("d8_adx", {}).get("weight", 1.0),
+        "d9": dims.get("d9_divergence", {}).get("weight", 1.0),
+        "d10": dims.get("d10_weekly", {}).get("weight", 1.0),
+    }
+
+
+_WEIGHT_CONFIG_CACHE = None
+
+
+def _load_weight_config() -> dict | None:
+    """Auto-load weight_config.json from default path."""
+    global _WEIGHT_CONFIG_CACHE
+    if _WEIGHT_CONFIG_CACHE is not None:
+        return _WEIGHT_CONFIG_CACHE
+    import json
+    config_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "data", "limit_up_backtest", "weight_config.json",
+    )
+    if os.path.exists(config_path):
+        try:
+            with open(config_path) as f:
+                _WEIGHT_CONFIG_CACHE = json.load(f)
+            return _WEIGHT_CONFIG_CACHE
+        except Exception:
+            pass
+    return None
 
 
 def analyze_stock(name: str, code: str, price: float, change_pct: float,
