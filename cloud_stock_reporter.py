@@ -1359,13 +1359,75 @@ def daemon_loop():
     logger.info("Daemon stopped.")
 
 
+def _quick_stock_analysis(code: str):
+    """Standalone single-stock analysis — prints report to stdout, no WeCom push."""
+    import os
+    # Resolve name prefix
+    symbol = f"{code_prefix(code)}{code}"
+
+    # Fetch quote for name + price context
+    name, price, change_pct, _ = fetch_quote(symbol)
+    if not name:
+        print(f"Failed to fetch quote for {code}")
+        return
+
+    print(f"  {code}  {name}  ¥{price:.2f}  ({change_pct:+.2f}%)")
+    print()
+
+    # Full analysis
+    data = process_stock(code)
+    if not data:
+        print(f"Analysis failed for {code}")
+        return
+
+    # Print the text report
+    print(data.get("text_msg", "No report generated"))
+
+    # If AI analysis available
+    if data.get("ai_text"):
+        print("-" * 50)
+        print("[AI 分析]")
+        print(data["ai_text"])
+
+    # Multi-agent results
+    if data.get("decision"):
+        dec = data["decision"]
+        print("-" * 50)
+        print("[多智能体决策]")
+        for k, v in dec.items():
+            print(f"  {k}: {v}")
+
+    # Also save an HTML preview
+    try:
+        from lib.report_html import build_stock_report, save_report
+        html = build_stock_report(data)
+        ts = datetime.now().strftime("%Y-%m-%d")
+        filepath = save_report(html, prefix=f"quick_{code}", subdir=ts)
+        print()
+        print(f"HTML report: {filepath}")
+    except Exception:
+        pass
+
+
 def main():
     """Main entry point.
 
     Usage:
-        python cloud_stock_reporter.py            # single run
-        python cloud_stock_reporter.py --daemon   # run on interval during market hours
+        python cloud_stock_reporter.py                  # single run (all stocks)
+        python cloud_stock_reporter.py --daemon         # run on interval during market hours
+        python cloud_stock_reporter.py --stock 600519   # quick single-stock analysis
     """
+    # ── Quick single-stock analysis ──────────────────────────────────
+    if "--stock" in sys.argv:
+        idx = sys.argv.index("--stock")
+        if idx + 1 < len(sys.argv):
+            code = sys.argv[idx + 1].strip()
+            _quick_stock_analysis(code)
+        else:
+            print("Usage: python cloud_stock_reporter.py --stock CODE")
+            sys.exit(1)
+        return
+
     if not WEBHOOK_URL:
         logger.error(
             "WECOM_WEBHOOK_URL is required. "
